@@ -45,7 +45,7 @@ import static org.parboiled.common.StringUtils.repeat;
  * Builds an Abstract Syntax Tree (AST) of {@link Node} objects.
  */
 @SuppressWarnings( {"InfiniteRecursion"})
-public class Parser extends BaseParser<Object> implements Extensions {
+public class Parser extends BaseParser<Object> implements Extensions, PegDownParser {
     
     protected static final char CROSSED_OUT = '\uffff';
 

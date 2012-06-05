@@ -30,7 +30,7 @@ import org.pegdown.ast.RootNode;
  * @see <a href="http://www.parboiled.org/">parboiled.org</a>
  */
 public class PegDownProcessor {
-    public final Parser parser;
+    public final PegDownParser parser;
 
     /**
      * Creates a new processor instance without any enabled extensions.
@@ -53,7 +53,7 @@ public class PegDownProcessor {
      *
      * @param parser the parser instance to use
      */
-    public PegDownProcessor(Parser parser) {
+    public PegDownProcessor(PegDownParser parser) {
         this.parser = parser;
     }
 
