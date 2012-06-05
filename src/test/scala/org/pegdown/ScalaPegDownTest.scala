@@ -35,8 +35,33 @@ class ScalaPegDownTest extends Specification {
      "xml_instruction")
     .split(' ').map(prefixed("Maruku/"))
 
+  val markDownTest103 = Seq(
+    "Amps and angle encoding",
+    "Auto links",
+    "Backslash escapes",
+    "Blockquotes with code blocks",
+    "Code Blocks",
+    "Code Spans",
+    "Hard-wrapped paragraphs with list-like lines",
+    "Horizontal rules",
+    "Inline HTML (Advanced)",
+    "Inline HTML (Simple)",
+    "Inline HTML comments",
+    "Links, inline style",
+    "Links, reference style",
+    "Links, shortcut references",
+    "Literal quotes in titles",
+    "Markdown Documentation - Basics",
+    "Markdown Documentation - Syntax",
+    "Nested blockquotes",
+    "Ordered and unordered lists",
+    "Strong and em together",
+    "Tabs",
+    "Tidyness"
+  ).map(prefixed("MarkdownTest103/"))
+
   val tests: Seq[String] =
-    /*pegdownTests ++*/ marukuTests
+    pegdownTests ++ marukuTests ++ markDownTest103
 
    val ms =
       tests.map { name =>
