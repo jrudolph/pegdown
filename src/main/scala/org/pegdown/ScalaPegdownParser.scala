@@ -44,8 +44,8 @@ class ScalaPegdownParser extends org.parboiled.scala.Parser with PegDownParser {
     /*Link | */NonLinkInline
   }
   def NonLinkInline = rule {
-    Str | Endline /*| UlOrStarLine*/ | Space | StrongOrEmph |
-    // Image | CodeNode | InlineHtmlNode | Entity | EscapedChar |
+    Str | Endline | UlOrStarLine | Space | StrongOrEmph |
+    /* Image |*/ Code | /*InlineHtmlNode | */Entity | EscapedChar |
     // QUOTES |
     // SMARTS |
     Symbol
@@ -76,6 +76,40 @@ class ScalaPegdownParser extends org.parboiled.scala.Parser with PegDownParser {
 
   def Space = rule {
     oneOrMore(Spacechar) ~ push(new TextNode(" "))
+  }
+
+  def UlOrStarLine = rule {
+    (CharLine('_') | CharLine('*')) ~> (new TextNode(_))
+  }
+
+  def Code: Rule1[CodeNode] = rule {
+    test("`") ~ (
+      Code(Ticks(1)) |
+      Code(Ticks(2)) |
+      Code(Ticks(3)) |
+      Code(Ticks(4)) |
+      Code(Ticks(5))
+    )
+  }
+  def Code(delimiter: Rule0): Rule1[CodeNode] = {
+    delimiter ~ Sp ~ oneOrMore(
+      !"`" ~ Nonspacechar |
+      !delimiter ~ oneOrMore("`") |
+      !(Sp ~ delimiter) ~ (
+        Spacechar | (Newline ~ !BlankLine)
+      )
+    ) ~> (new CodeNode(_)) ~
+    Sp ~ delimiter
+  }
+
+
+  def Entity = rule {
+    "&" ~ (
+      HexEntity | DecEntity | CharEntity
+    ) ~ ";" ~> (new TextNode(_))
+  }
+  def EscapedChar = rule {
+    "\\" ~ NotNewline ~ ANY ~> (new SpecialTextNode(_))
   }
 
   def Symbol = rule {
@@ -128,10 +162,25 @@ class ScalaPegdownParser extends org.parboiled.scala.Parser with PegDownParser {
   def Digit = rule {
     "0"-"9"
   }
+  def HexDigit = rule {
+    Digit | ("a"-"f") | ("A"-"F")
+  }
 
-  def CharLine(char: Char) = rule {
+  def CharLine(char: Char) =
     nOrMore(4)(char.toString) |
     Spacechar ~ oneOrMore(char.toString) ~ Spacechar
+
+  def Ticks(n: Int) =
+    nTimes(n, "`") ~ !"`"
+
+  def HexEntity = rule {
+    "#" ~ ignoreCase("x") ~ oneOrMore(HexDigit)
+  }
+  def DecEntity = rule {
+    "#" ~ oneOrMore(Digit)
+  }
+  def CharEntity = rule {
+    oneOrMore(Alphanumeric)
   }
 
   def NonIndentSpace = rule {
@@ -145,6 +194,9 @@ class ScalaPegdownParser extends org.parboiled.scala.Parser with PegDownParser {
   }
   def Spacechar = rule {
     anyOf(" \t")
+  }
+  def Nonspacechar = rule {
+    !Spacechar ~ NotNewline ~ ANY
   }
   def Newline = rule {
     "\n" | ("\r" ~ optional("\n"))
