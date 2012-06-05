@@ -28,6 +28,13 @@ public class RootNode extends SuperNode {
     private List<ReferenceNode> references = ImmutableList.of();
     private List<AbbreviationNode> abbreviations = ImmutableList.of();
 
+    public RootNode() {
+    }
+
+    public RootNode(List<Node> children) {
+        getChildren().addAll(children);
+    }
+
     public List<ReferenceNode> getReferences() {
         return references;
     }
