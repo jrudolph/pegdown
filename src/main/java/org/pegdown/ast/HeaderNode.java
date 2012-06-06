@@ -20,8 +20,15 @@ package org.pegdown.ast;
 
 import org.parboiled.common.Preconditions;
 
+import java.util.List;
+
 public class HeaderNode extends SuperNode {
     private final int level;
+
+    public HeaderNode(int level, List<Node> children) {
+        super(children);
+        this.level = level;
+    }
 
     public HeaderNode(int level, Node child) {
         super(child);

@@ -14,17 +14,29 @@ class ScalaPegdownParser extends org.parboiled.scala.Parser with PegDownParser {
   type Nodes = Seq[Node]
 
   def Root: Rule1[RootNode] = rule {
-    zeroOrMore(Block) ~~> (ch => new RootNode(ch.asJava))
+    zeroOrMore(Block) ~~> asJava(new RootNode(_))
   }
 
   def Block: Rule1[Node] = rule {
-    Para
+    zeroOrMore(BlankLine) ~ (
+      /* BlockQuote | Verbatim | */
+      // ext ABBREVIATIONS
+      /* Reference | HorizontalRule |*/ Heading | /*OrderedList | BulletList | HtmlBlock */
+      // ext TABLES
+      // ext DEFINITIONS
+      // ext fenced code blocks
+      Para | Inlines
+    )
   }
 
   def BlockQuote: Rule1[BlockQuoteNode] = rule {
     push(new BlockQuoteNode(List[Node]().asJava))
   }
   //def Verbatim: Rule1[VerbatimNode] = rule {}
+
+  def Heading: Rule1[HeaderNode] = rule {
+    AtxHeading | SetextHeading
+  }
 
   def Para: Rule1[ParaNode] = rule {
     NonIndentSpace ~ Inlines ~~> toSeq ~ oneOrMore(BlankLine) ~~> asJava(new ParaNode(_))
@@ -116,8 +128,29 @@ class ScalaPegdownParser extends org.parboiled.scala.Parser with PegDownParser {
     SpecialChar ~> (new SpecialTextNode(_))
   }
 
-  def AtxStart: Rule1[Node] = rule {
-    ("######" | "#####" | "####" | "###" | "##" | "#") ~> (s => new HeaderNode(s.length))
+  def AtxHeading = rule {
+    AtxStart ~ optional(Sp) ~ oneOrMore(AtxInline) ~~> (_.asJava) ~ optional(Sp ~ zeroOrMore("#") ~ Sp) ~ Newline ~~>
+      (new HeaderNode(_, _))
+  }
+
+  def AtxStart: Rule1[Int] = rule {
+    ("######" | "#####" | "####" | "###" | "##" | "#") ~> (_.length)
+  }
+  def AtxInline = rule {
+    !Newline ~ !(optional(Sp) ~ zeroOrMore("#") ~ Sp ~ Newline) ~ Inline
+  }
+
+  def SetextHeading: Rule1[HeaderNode] = rule {
+    test(oneOrMore(NotNewline ~ ANY) ~ Newline ~ (
+      nOrMore(3)("=") |
+      nOrMore(3)("-")
+    ) ~ Newline) ~
+    (SetextHeading('=', 1) | SetextHeading('-', 2))
+  }
+  def SetextHeading(char: Char, level: Int): Rule1[HeaderNode] =
+    oneOrMore(SetextInline) ~ Newline ~ nOrMore(3)(char.toString) ~ Newline ~~> asJava(new HeaderNode(level, _))
+  def SetextInline = rule {
+    !Endline ~ Inline
   }
 
   // links
@@ -216,7 +249,7 @@ class ScalaPegdownParser extends org.parboiled.scala.Parser with PegDownParser {
   def ext[T](extension: Int): Boolean = false
 
   def parse(source: Array[Char]): RootNode = {
-    val parsingResult = ReportingParseRunner(Root ~ EOI).run(source)
+    val parsingResult = ReportingParseRunner(Root).run(source)
     parsingResult.result.getOrElse {
       throw new ParsingException("Invalid JSON source:\n" + ErrorUtils.printParseErrors(parsingResult))
     }
