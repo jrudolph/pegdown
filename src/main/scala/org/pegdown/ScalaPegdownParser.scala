@@ -217,7 +217,7 @@ class ScalaPegdownParser extends org.parboiled.scala.Parser with PegDownParser {
   }
 
   def NonIndentSpace = rule {
-    "    " | "   " | "  " | EMPTY
+    "   " | "  " | " " | EMPTY
   }
   def BlankLine = rule {
     Sp ~ Newline
