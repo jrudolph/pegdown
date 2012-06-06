@@ -21,7 +21,7 @@ class ScalaPegdownParser extends org.parboiled.scala.Parser with PegDownParser {
     zeroOrMore(BlankLine) ~ (
       /* BlockQuote | Verbatim | */
       // ext ABBREVIATIONS
-      /* Reference | HorizontalRule |*/ Heading | /*OrderedList | BulletList | HtmlBlock */
+      /* Reference |*/ HorizontalRule | Heading | /*OrderedList | BulletList | HtmlBlock |*/
       // ext TABLES
       // ext DEFINITIONS
       // ext fenced code blocks
@@ -30,13 +30,19 @@ class ScalaPegdownParser extends org.parboiled.scala.Parser with PegDownParser {
   }
 
   def BlockQuote: Rule1[BlockQuoteNode] = rule {
-    push(new BlockQuoteNode(List[Node]().asJava))
+    push(new BlockQuoteNode(scala.List[Node]().asJava))
   }
   //def Verbatim: Rule1[VerbatimNode] = rule {}
 
-  def Heading: Rule1[HeaderNode] = rule {
-    AtxHeading | SetextHeading
+  def HorizontalRule: Rule1[SimpleNode] = rule {
+    NonIndentSpace ~ (
+      HorizontalRule("*") |
+      HorizontalRule("-") |
+      HorizontalRule("_")
+    ) ~ Sp ~ Newline ~ oneOrMore(BlankLine) ~ push(new SimpleNode(Type.HRule))
   }
+  def HorizontalRule(c: Rule0) =
+   c ~ Sp ~ c ~ Sp ~ c ~ zeroOrMore(Sp ~ c)
 
   def Para: Rule1[ParaNode] = rule {
     NonIndentSpace ~ Inlines ~~> toSeq ~ oneOrMore(BlankLine) ~~> asJava(new ParaNode(_))
@@ -128,6 +134,11 @@ class ScalaPegdownParser extends org.parboiled.scala.Parser with PegDownParser {
     SpecialChar ~> (new SpecialTextNode(_))
   }
 
+  // headings
+
+  def Heading: Rule1[HeaderNode] = rule {
+    AtxHeading | SetextHeading
+  }
   def AtxHeading = rule {
     AtxStart ~ optional(Sp) ~ oneOrMore(AtxInline) ~~> (_.asJava) ~ optional(Sp ~ zeroOrMore("#") ~ Sp) ~ Newline ~~>
       (new HeaderNode(_, _))
